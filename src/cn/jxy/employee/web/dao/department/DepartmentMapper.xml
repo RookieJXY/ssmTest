@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper 
+  PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+  "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="cn.jxy.employee.web.dao.department.DepartmentMapper">
+	<resultMap type="cn.jxy.employee.web.model.department.Department" id="departmentResult">
+		<result column="DEPARTMENT_ID"           property="departmentId"/>
+        <result column="DEPARTMENT_NAME"         property="departmentName"/>
+        <result column="DEPARTMENT_CODE"     	 property="departmentCode"/>
+        <result column="MANAGER_ID"     	 	 property="managerId"/>
+        <result column="PARENT_DEPARTMENT_ID"	 property="parentDepartmentId" />
+        <result column="CRT_TIME"	 			 property="crtTime" />
+        <result column="AVAIL_STATE" 			 property="availState"/>
+        <association resultMap="userResult"	 	 property="manager" />
+	</resultMap>
+	
+	<resultMap type="cn.jxy.employee.web.model.User" id="userResult">
+		<result column="USER_ID"           property="userId"/>
+        <result column="USER_NAME"         property="username"/>
+        <result column="USER_PASSWORD"     property="password"/>
+        <result	column="USER_CODE"		   property="userCode"/>
+        <result	column="DEPARTMENT_ID"	   property="departmentId"/>
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+        DEPARTMENT_ID, DEPARTMENT_NAME, DEPARTMENT_CODE, MANAGER_ID,
+        PARENT_DEPARTMENT_ID, AVAIL_STATE, CRT_TIME
+    </sql>
+    
+    <select id="selectList" resultMap="departmentResult">
+    	select
+    		A.*,
+    		B.*
+    	from
+    		AESB_G_DEPARTMENT_INFO A
+    	join
+    		AESB_G_USER_INFO B
+    	on
+    		A.MANAGER_ID = B.USER_ID
+    </select>
+	
+	<!-- 根据关键字查询部门数 -->
+	<select id="selectRowsByKeywords" resultType="int">
+		select 
+			count(*)
+		from
+			(select * from AESB_G_DEPARTMENT_INFO where AVAIL_STATE = '1')
+		<where>
+			<if test="keywords != null and keywords.size() > 0">
+				<foreach collection="keywords" item="keyword" separator="or">
+					DEPARTMENT_NAME like '%${ keyword }%'
+				</foreach>
+			or
+				<foreach collection="keywords" item="keyword" separator="or">
+					DEPARTMENT_CODE like '%${ keyword }%'
+				</foreach>
+			</if>
+		</where>
+	</select>
+	
+	<select id="selectRowsByKeywords2" resultType="int">
+		select 
+			count(*)
+		from
+			(select * from AESB_G_DEPARTMENT_INFO )
+		<where>
+			<if test="keywords != null and keywords.size() > 0">
+				<foreach collection="keywords" item="keyword" separator="or">
+					DEPARTMENT_NAME like '%${ keyword }%'
+				</foreach>
+			or
+				<foreach collection="keywords" item="keyword" separator="or">
+					DEPARTMENT_CODE like '%${ keyword }%'
+				</foreach>
+			</if>
+		</where>
+	</select>
+	<!-- 根据关键字分页查询部门 -->
+	<select id="selectListBykeywords" resultMap="departmentResult">
+		select 
+			A.*,
+			B.* 
+		from 
+		(
+		 	select 
+		 		ADI.*,rownumber() over() as RW
+		    from 
+		    	(
+		    		select 
+						*
+					from
+						(select * from AESB_G_DEPARTMENT_INFO)
+<!-- 						AESB_G_DEPARTMENT_INFO  where AVAIL_STATE = '1' -->
+					<where>
+						<if test="keywords != null and keywords.size() > 0">
+							<foreach collection="keywords" item="keyword" separator="or">
+								DEPARTMENT_NAME like '%${ keyword }%'
+							</foreach>
+						or
+							<foreach collection="keywords" item="keyword" separator="or">
+								DEPARTMENT_CODE like '%${ keyword }%'
+							</foreach>
+						</if>
+					</where>
+				) as ADI
+		) as A
+		left outer join 
+			AESB_G_USER_INFO as B
+		on 
+			A.MANAGER_ID = B.USER_ID
+		where 
+			A.RW between  ${ page.begin } and  ${ page.end }
+	</select>
+	
+	<!-- 根据父部门ID查询子部门 -->
+	<select id="selectListByBreifInfo" parameterType="map" resultMap="departmentResult">
+		select 
+			<include refid="Base_Column_List"/> 
+		from 
+			AESB_G_DEPARTMENT_INFO
+		<where>
+			<if test="parentDepartmentId != null and parentDepartmentId != ''">
+				and
+					PARENT_DEPARTMENT_ID = #{ parentDepartmentId }
+			</if>
+			<if test="departmentId != null and departmentId != ''">
+				and
+					DEPARTMENT_ID = #{ departmentId }
+			</if>
+			<if test="departmentName != null and departmentName != ''">
+				and 
+					DEPARTMENT_NAME = #{ departmentName }
+			</if>
+			<if test="departmentCode != null and departmentCode != ''">
+				and
+					DEPARTMENT_CODE = #{ departmentCode }
+			</if>
+			<if test="availState != null and availState != ''">
+				and
+					AVAIL_STATE = #{ availState }
+			</if>
+		</where> 
+			
+	</select>
+	
+	<!-- 根据部门ID查询对应部门信息 -->
+	<select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="departmentResult">
+		select
+			A.*,
+			B.*
+		from
+			AESB_G_DEPARTMENT_INFO as A
+		left outer join 
+			AESB_G_USER_INFO as B
+		on
+			A.MANAGER_ID = B.USER_ID
+		where 
+			A.DEPARTMENT_ID = #{ departmentId }
+	</select>
+	
+	<!-- 插入新部门 -->
+	<insert id="insertSelective" parameterType="cn.jxy.employee.web.model.department.Department">
+		insert into
+			AESB_G_DEPARTMENT_INFO
+		(
+			DEPARTMENT_ID,
+			DEPARTMENT_NAME,
+			DEPARTMENT_CODE,
+<!-- 			MANAGER_ID, -->
+			PARENT_DEPARTMENT_ID,
+			CRT_TIME,
+			AVAIL_STATE
+		)
+		values
+		(
+			#{ departmentId },
+			#{ departmentName },
+			#{ departmentCode },
+<!-- 			'${ manager.userId }', -->
+			#{ parentDepartmentId },
+			#{ crtTime },
+			#{ availState }
+		)			
+	</insert>
+	
+	<!-- 更新部门信息 -->
+	<update id="updateByPrimaryKeySelective" parameterType="cn.jxy.employee.web.model.department.Department">
+		update
+			AESB_G_DEPARTMENT_INFO
+		set
+			DEPARTMENT_NAME = #{ departmentName },
+			DEPARTMENT_CODE = #{ departmentCode },
+<!-- 			MANAGER_ID = '${ manager.userId }', -->
+			PARENT_DEPARTMENT_id = #{ parentDepartmentId },
+			AVAIL_STATE = #{availState}			
+		where
+			DEPARTMENT_ID = #{ departmentId }
+			
+	</update>
+	
+	<update id="updateAvailById" parameterType="cn.jxy.employee.web.model.department.Department">
+		update
+			AESB_G_DEPARTMENT_INFO
+		set
+			AVAIL_STATE = '0'
+		where
+			DEPARTMENT_ID = #{ departmentId }
+	</update>
+	<!-- 修改部门负责人 -->
+	<update id="updateManagerId" parameterType="string">
+		update
+			AESB_G_DEPARTMENT_INFO
+		set
+			MANAGER_ID = #{managerId}
+		where
+			DEPARTMENT_ID = #{ departmentId }
+	</update>
+	
+	<!-- 根据部门ID删除对应部门  -->
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+		delete from
+			AESB_G_DEPARTMENT_INFO
+		where
+			DEPARTMENT_ID = #{ departmentId }
+	</delete>
+	
+	<select id="selectQuantity" resultType="int">
+    	select
+    		count(*)
+    	from
+    		AESB_G_DEPARTMENT_INFO A
+		where 
+			avail_state = '1'
+    </select>
+</mapper>

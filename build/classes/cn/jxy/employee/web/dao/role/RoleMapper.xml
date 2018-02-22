@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper 
+  PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+  "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="cn.jxy.employee.web.dao.role.RoleMapper">
+	<resultMap type="cn.jxy.employee.web.model.Role" id="roleResult">
+		<result column="ROLE_ID"           property="roleId"/>
+        <result column="ROLE_NAME"         property="roleName"/>
+        <result column="ROLE_CODE"     	   property="roleCode"/>
+        <result column="ROLE_DESC"     	   property="roleDesc"/>
+        <result column="CRT_TIME"    	   property="crtTime"/>
+        <result column="AVAIL_STATE"       property="availState"/>
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+        ROLE_ID, ROLE_NAME, ROLE_CODE, ROLE_DESC, CRT_TIME,AVAIL_STATE
+    </sql>
+    
+    <sql id="limitStart">
+		select * from
+		(
+			select T.*,ROWNUMBER() OVER() AS ROWNUMBER FROM
+			(
+	</sql>
+
+	<sql id="limitEnd">
+			) as T
+		) as A
+		WHERE
+			A.ROWNUMBER
+		BETWEEN #{page.begin} AND #{page.end}
+	</sql>
+    
+    <select id="selectRoleByRoleCode" parameterType="string" resultMap="roleResult">
+    	select
+    		<include refid="Base_Column_List"/>
+    	from
+    		AESB_G_ROLE_INFO
+    	where
+    		ROLE_CODE = #{ roleCode }
+    </select>
+    
+    <!-- 根据角色ID查询对应角色信息 -->
+    <select id="selectByPrimaryKey" parameterType="string" resultMap="roleResult">
+    	select
+    		<include refid="Base_Column_List"/>
+    	from
+    		AESB_G_ROLE_INFO
+    	where
+    		ROLE_ID = #{ roleId }
+    </select>
+    
+    <select id="selectList" resultMap="roleResult">
+		select
+		<include refid="Base_Column_List"/>
+			from AESB_G_ROLE_INFO
+		where
+			ROLE_CODE <![CDATA[ <> ]]> 'admin'
+    </select>
+    
+    <select id="selectRoleListByKeywords" resultMap="roleResult">
+		select
+		<include refid="Base_Column_List"/>
+			from AESB_G_ROLE_INFO
+		<where>
+				<if test="roleId != null and roleId != ''">
+					and
+						ROLE_ID = #{ roleId }
+				</if>
+				<if test="roleName != null and roleName != ''">
+					and
+						ROLE_NAME = #{ roleName }
+				</if>
+				<if test="roleCode != null and roleCode != ''">
+					and
+						ROLE_CODE = #{ roleCode }
+				</if>
+			</where>	
+    </select>
+    
+    <select id="selectListByFunctionId" parameterType="string" resultMap="roleResult">
+    	select
+    		<include refid="Base_Column_List" />
+    	from
+    		AESB_G_ROLE_INFO
+    	where
+    		ROLE_ID 
+    	in
+   		(
+   			select 
+   				ROLE_ID 
+   			from 
+   				AESB_G_ROLE_FUNCTION_REL
+   			where
+   				FUNCTION_ID = #{ functionId }
+   		)
+    </select>
+	
+	<!-- 插入角色 -->
+	<insert id="insertSelective" parameterType="cn.jxy.employee.web.model.Role">
+		insert into
+			AESB_G_ROLE_INFO
+		(
+			ROLE_ID,
+			ROLE_NAME,
+			ROLE_CODE,
+			ROLE_DESC,
+			CRT_TIME,
+			AVAIL_STATE
+		)
+		values
+		(
+			#{ roleId },
+			#{ roleName },
+			#{ roleCode },
+			#{ roleDesc },
+			#{ crtTime },
+			'1'
+		)		
+	</insert>
+	<!-- 插入角色权限映射表 -->
+	<insert id="insertRoleFunction" parameterType="java.util.Map">
+		insert into
+			AESB_G_ROLE_FUNCTION_REL
+		(
+			ROLE_ID,
+			FUNCTION_ID
+		)
+		values
+		(
+			#{ roleId },
+			#{ functionId }
+		)	
+	</insert>
+	
+	
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+		delete
+			AESB_G_ROLE_INFO
+		where
+			ROLE_ID = #{roleId}
+	</delete>
+	
+	<!-- 刪除角色其實是把角色的狀態改為不可用 -->
+	<update id="updateAvailState" parameterType="cn.jxy.employee.web.model.Role">
+		UPDATE
+			AESB_G_ROLE_INFO
+		set
+			AVAIL_STATE='0'
+		where
+			ROLE_ID=#{ roleId }
+	</update>
+	
+	<!-- 模糊查询分页实现 -->
+<!-- 	<select id="selectListVague" parameterType="cn.com.agree.soa.web.model.page.RolePage" resultMap="roleResult"> -->
+<!-- 		select -->
+<!-- 			* -->
+<!-- 		from ( -->
+<!-- 		 	select  -->
+<!-- 		 		ADI.*,rownumber() over() as RW -->
+<!-- 		    from  -->
+<!-- 		    	AESB_G_ROLE_INFO  -->
+<!-- 		    as ADI -->
+<!-- 		    	where -->
+<!-- 		    	ADI.ROLE_NAME like CONCAT(CONCAT('%', #{roleName}),'%')) as A -->
+<!-- 		where -->
+<!-- 			A.RW between  #{ begin } and  #{ end } -->
+<!-- 	</select> -->
+		<!-- <select id="selectListByPage" parameterType="cn.com.agree.soa.web.model.page.RolePage" resultMap="roleResult">
+			<include refid = "limitStart"/>
+			SELECT 
+				* 
+			FROM
+				AESB_G_ROLE_INFO
+			<where>
+				<if test="keywords != null and keywords.size() > 0">
+					<foreach collection="keywords" item="keyword" separator="or">
+						ROLE_NAME LIKE '%${ keyword }%'
+					</foreach>
+					or
+					<foreach collection="keywords" item="keyword" separator="or">
+						ROLE_CODE LIKE '%${ keyword }%'
+					</foreach>
+				</if>
+			</where>
+			<include refid = "limitEnd"/>
+		</select> -->
+	
+	<!-- 模糊查询总结果数量 -->
+<!-- 	<select id="selectListVagueSize" parameterType="cn.com.agree.soa.web.model.page.RolePage" resultType="Integer"> -->
+<!-- 		select  -->
+<!-- 			count(ROLE_ID) -->
+<!-- 		from  -->
+<!-- 			AESB_G_ROLE_INFO -->
+<!-- 		where -->
+<!-- 			ROLE_NAME like CONCAT(CONCAT('%', #{roleName}),'%') -->
+<!-- 	</select> -->
+	<!-- <select id="selectQuantity" parameterType="cn.com.agree.soa.web.model.page.RolePage" resultType="Integer">
+		select 
+			count(*)
+		from 
+			AESB_G_ROLE_INFO
+		<where>
+			<if test="keywords != null and keywords.size() > 0">
+				<foreach collection="keywords" item="keyword" separator="or">
+					ROLE_NAME LIKE '%${ keyword }%'
+				</foreach>
+			</if>
+		</where>
+	</select> -->
+	
+	<update id="updateByPrimaryKeySelective" parameterType="cn.jxy.employee.web.model.Role">
+		update
+			AESB_G_ROLE_INFO
+		set
+			ROLE_NAME=#{ roleName },
+			ROLE_CODE=#{ roleCode },
+			ROLE_DESC=#{ roleDesc },
+			AVAIL_STATE=#{ availState }
+		where
+			ROLE_ID=#{ roleId }
+	</update>
+</mapper>

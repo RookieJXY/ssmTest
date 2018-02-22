@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper 
+  PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+  "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="cn.jxy.employee.web.dao.function.FunctionMapper">
+	<resultMap type="cn.jxy.employee.web.model.Function" id="functionResult">
+		<result column="FUNCTION_ID"           property="functionId"/>
+        <result column="FUNCTION_NAME"         property="functionName"/>
+        <result column="FUNCTION_CODE"         property="functionCode"/>
+        <result column="HREF"     	   property="href"/>
+        <result column="CSS_CLASS"     	   property="cssClass"/>
+        <result column="FUNCTION_DESC"     	   property="functionDesc"/>
+        <result column="PARENT_FUNCTION_ID"    property="parentFunctionId"/>
+        <result column="CRT_TIME"   		   property="crtTime"/>
+	</resultMap>
+	
+	<resultMap type="cn.jxy.employee.web.model.Function" id="functionHasRoleResult">
+		<result column="FUNCTION_ID"           property="functionId"/>
+        <result column="FUNCTION_NAME"         property="functionName"/>
+        <result column="HREF"     	   property="href"/>
+        <result column="FUNCTION_DESC"     	   property="functionDesc"/>
+        <result column="PARENT_FUNCTION_ID"    property="parentFunctionId"/>
+        <result column="CRT_TIME"   		   property="crtTime"/>
+        <result column="ROLE_ID"   		   property="roleId"/>
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+        FUNCTION_ID, FUNCTION_NAME, FUNCTION_CODE, HREF, CSS_CLASS, 
+        FUNCTION_DESC, PARENT_FUNCTION_ID, CRT_TIME
+    </sql>
+    
+	<!-- 查询所有权限信息 -->
+	<select id="selectList" resultMap="functionResult">
+		select
+			<include refid="Base_Column_List"/>
+		from 
+			AESB_G_FUNCTION_INFO
+		where
+			HREF = '#'
+	</select>
+	
+	<select id="selectListByParentFunctionId" parameterType="string" resultMap="functionResult">
+		select
+			<include refid="Base_Column_List" />
+		from 
+			AESB_G_FUNCTION_INFO
+    	WHERE
+	    	PARENT_FUNCTION_ID = #{ parentFunctionId }
+	</select>
+	
+	<!-- 根据id查询   -->
+	<select id="selectByPrimaryKey" resultMap="functionResult" parameterType="string">
+		select
+		<include refid="Base_Column_List"/>
+			from AESB_G_FUNCTION_INFO
+		where
+			FUNCTION_ID = #{functionId}
+	</select>
+	
+	<!-- 根据href查询   -->
+	<select id="selectListByHref" resultMap="functionResult" parameterType="string">
+		select
+		<include refid="Base_Column_List"/>
+			from AESB_G_FUNCTION_INFO
+		where
+			HREF = #{href}
+	</select>
+	
+	<!-- 根据父功能ID查询子功能 -->
+	<select id="selectByParentFunctionId2" parameterType="string" resultMap="functionResult">
+		select
+			<include refid="Base_Column_List" />
+		from 
+			AESB_G_FUNCTION_INFO
+    	WHERE
+	    	PARENT_FUNCTION_ID = #{ parentFunctionId }
+	</select>
+	
+	<select id="selectListByRole" parameterType="string" resultMap="functionResult">
+		select
+			<include refid="Base_Column_List"/>
+		from
+			AESB_G_FUNCTION_INFO
+		where
+			FUNCTION_ID in
+			(
+				select
+					FUNCTION_ID
+				from
+					AESB_G_ROLE_FUNCTION_REL
+				where
+					ROLE_ID = #{ roleId }
+			)
+	</select>
+	
+	
+	<update id="updateByPrimaryKeySelective" parameterType="cn.jxy.employee.web.model.Function">
+		update
+			AESB_G_FUNCTION_INFO
+		set
+			FUNCTION_NAME = #{ functionName },
+			HREF = #{ href },
+			FUNCTION_DESC = #{ functionDesc },
+			PARENT_FUNCTION_ID = #{ parentFunctionId }
+		where
+			FUNCTION_ID=#{ functionId }
+	</update>
+	
+	<!-- 根据父类节点查询权限 -->
+	<select id="selectByparentFunctionId" resultType="String" parameterType="java.lang.String">
+		select
+		FUNCTION_ID
+			from AESB_G_FUNCTION_INFO
+    	WHERE
+	    	PARENT_FUNCTION_ID = #{parentFunctionId}
+	</select>
+	
+	<insert id="insertSelective" parameterType="cn.jxy.employee.web.model.Function">
+		insert into
+			AESB_G_FUNCTION_INFO
+		(
+			<include refid="Base_Column_List"/>
+		)
+		values
+		(
+			#{ functionId },
+			#{ functionName },
+			#{ href },
+			#{ functionDesc },
+			#{ parentFunctionId },
+			#{ crtTime }
+		)			
+	</insert>
+	
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+		delete from
+			AESB_G_FUNCTION_INFO
+		where
+			FUNCTION_ID = #{functionId}
+	</delete>
+	
+	<delete id="deleteByFunctionIds" parameterType="List">
+		delete from
+			AESB_G_FUNCTION_INFO
+		where
+			FUNCTION_ID IN
+			<foreach item="functionid" collection="list" open="(" separator="," close=")">
+				#{functionid}
+			</foreach>
+	</delete>
+	
+	<!-- 该角色所赋予的权限 -->
+	<select id="selectListIfHasRole" resultMap="functionHasRoleResult" parameterType="java.lang.String">
+		select A.*,B.ROLE_ID from 
+			AESB_G_FUNCTION_INFO A 
+		LEFT JOIN 
+			AESB_G_ROLE_FUNCTION_REL B 
+		ON 
+			A.FUNCTION_ID = B.FUNCTION_ID
+		WHERE
+			B.ROLE_ID=#{roleId}
+	</select>
+	
+</mapper>

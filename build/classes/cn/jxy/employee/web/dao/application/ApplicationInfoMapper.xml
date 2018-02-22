@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+  PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+  "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+ 
+<mapper namespace="cn.jxy.employee.web.dao.application.ApplicationInfoMapper">
+	
+	<resultMap type="cn.jxy.employee.web.model.application.ApplicationInfo" id="applicationInfoResult">
+		<result column="APPLICATION_ID"         property="applicationId"/>
+        <result column="APPLICATION_DESC"       property="applicationDesc"/>
+        <result column="TYPE"     				property="type"/>
+        <result column="OPR_TYPE"     			property="oprType"/>
+        <result column="CHANGE_NO"         		property="changeNo"/>
+        <result column="SYSTEM_ID"         		property="systemId"/>
+        <result column="ENTITY_ID"       		property="entityId"/>
+        <result column="ENTITY_VERSION_ID"     	property="entityVersionId"/>
+        <result column="CHANGE_DETAIL_ID"     	property="changeDetailId"/>
+        <result column="AUDIT_STATE"     		property="auditState"/>
+        <result column="CRT_TIME"     			property="crtTime"/>
+        <result column="RESERVEDA"     			property="reserveda"/>
+        <result column="RESERVEDB"     			property="reservedb"/>
+        <result column="RESERVEDC"     			property="reservedc"/>
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+        APPLICATION_ID, APPLICATION_DESC, TYPE, OPR_TYPE, CHANGE_NO, SYSTEM_ID, ENTITY_ID, 
+        ENTITY_VERSION_ID, CHANGE_DETAIL_ID, AUDIT_STATE, CRT_TIME,RESERVEDA,RESERVEDB,RESERVEDC
+    </sql>
+    
+    <select id="selectByPrimaryKey" parameterType="string" resultMap="applicationInfoResult">
+    	select
+    		<include refid="Base_Column_List"/>
+    	from
+    		AESB_G_APPLICATION_INFO
+    	where
+    		APPLICATION_ID = #{ applicationId }
+    </select>
+	
+	<insert id="insertSelective" parameterType="cn.jxy.employee.web.model.application.ApplicationInfo">
+		INSERT INTO
+    		AESB_G_APPLICATION_INFO(
+				APPLICATION_ID,
+		        APPLICATION_DESC,
+		        TYPE,
+		        OPR_TYPE,
+		        CHANGE_NO,
+		        SYSTEM_ID,
+		        ENTITY_ID,
+		        ENTITY_VERSION_ID,
+		        CHANGE_DETAIL_ID,
+		        AUDIT_STATE,
+		        CRT_TIME,
+		        RESERVEDA,
+		        RESERVEDB,
+		        RESERVEDC
+    		)
+    		VALUES
+    		(
+        		#{applicationId},
+        		#{applicationDesc},
+        		#{type},
+        		#{oprType},
+        		#{changeNo},
+        		#{systemId},
+        		#{entityId},
+        		#{entityVersionId},
+        		#{changeDetailId},
+        		#{auditState},
+        		#{crtTime},
+        		#{reserveda},
+        		#{reservedb},
+        		#{reservedc}
+    		)
+	</insert>
+	
+	<update id="updateByPrimaryKeySelective" parameterType="cn.jxy.employee.web.model.application.ApplicationInfo">
+		UPDATE
+			AESB_G_APPLICATION_INFO
+			<set>
+				<if test="auditState != null">
+				   AUDIT_STATE=#{auditState},
+				</if>
+				<if test="crtTime != null">
+				   CRT_TIME = #{crtTime}
+				</if>
+				<if test="reservedb != null">
+				   RESERVEDB=#{reservedb},
+				</if>
+				<if test="reservedc != null">
+				   RESERVEDC = #{reservedc}
+				</if>
+			</set>
+		WHERE 1 = 1 
+			<if test="applicationId != null">
+		    	AND APPLICATION_ID = #{applicationId}
+		    </if>
+		    <if test="changeNo != null">
+		    	AND CHANGE_NO = #{changeNo}
+		    </if>
+		    <if test="systemId != null">
+		    	AND SYSTEM_ID = #{systemId}
+		    </if>
+		    <if test="entityId != null">
+		    	AND ENTITY_ID = #{entityId}
+		    </if>
+		    <if test="entityVersionId != null">
+		    	AND ENTITY_VERSION_ID = #{entityVersionId}
+		    </if>
+	</update>
+	
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+		DELETE FROM 
+			AESB_G_APPLICATION_INFO 
+		WHERE 
+			APPLICATION_ID = #{applicationId}
+	</delete>
+	
+	<select id="selectList" resultMap="applicationInfoResult">
+		SELECT 
+			<include refid="Base_Column_List"/>
+		FROM
+			AESB_G_APPLICATION_INFO 
+	</select>
+		
+	<select id="selectRowsOfApplicationInfo" parameterType="java.util.HashMap" resultType="int">
+		SELECT
+		    COUNT(*)
+		FROM
+		    AESB_G_APPLICATION_INFO t
+		<where>
+			<if test="paramMap.applicationId != null and paramMap.applicationId.length() > 0">
+			    AND t.APPLICATION_ID = #{paramMap.applicationId}
+			</if>
+			<if test="paramMap.auditState != null and paramMap.auditState.length() > 0">
+				AND t.AUDIT_STATE = #{paramMap.auditState}
+			</if>
+			<if test="paramMap.type != null and paramMap.type.length() > 0">
+				AND t.TYPE = #{paramMap.type}
+			</if>
+			<if test="paramMap.changeNo != null and paramMap.changeNo.length() > 0">
+				AND t.CHANGE_NO = #{paramMap.changeNo}
+			</if>
+			<if test="paramMap.entityId != null and paramMap.entityId.length() > 0">
+				AND t.ENTITY_ID = #{paramMap.entityId}
+			</if>
+		</where>
+	</select>
+	
+	<select id="selectApplicationInfoByPage" parameterType="java.util.HashMap" resultMap="applicationInfoResult">
+		SELECT 
+			<include refid="Base_Column_List"/>
+		FROM
+		(
+				SELECT
+			    	rownumber() over() AS RW, t.*
+				FROM
+				    AESB_G_APPLICATION_INFO t
+				<where>
+					AND 
+						t.TYPE IN ('0','1','2','5','6')
+					<if test="paramMap.applicationId != null and paramMap.applicationId.length() > 0">
+					    AND t.APPLICATION_ID = #{paramMap.applicationId}
+					</if>
+					<if test="paramMap.auditState != null and paramMap.auditState.length() > 0">
+						AND t.AUDIT_STATE = #{paramMap.auditState}
+					</if>
+					<if test="paramMap.type != null and paramMap.type.length() > 0">
+						AND t.TYPE = #{paramMap.type}
+					</if>
+					<if test="paramMap.changeNo != null and paramMap.changeNo.length() > 0">
+						AND t.CHANGE_NO = #{paramMap.changeNo}
+					</if>
+					<if test="paramMap.entityId != null and paramMap.entityId.length() > 0">
+						AND t.ENTITY_ID = #{paramMap.entityId}
+					</if>
+				</where>
+		) t1
+		where t1.RW between #{ page.begin } and  #{ page.end }
+	</select>
+	
+	<select id="selectApplicationInfoByPage1" parameterType="java.util.HashMap" resultMap="applicationInfoResult">
+		SELECT 
+			<include refid="Base_Column_List"/>
+		FROM
+		(
+				SELECT
+			    	rownumber() over() AS RW, t.*
+				FROM
+				    AESB_G_APPLICATION_INFO t
+			where t.AUDIT_STATE = '1' AND t.TYPE IN ('0','1','2','5') AND t.RESERVEDA = #{paramMap.reserveda}
+		) t1
+		where t1.RW between #{ page.begin } and  #{ page.end }
+	</select>
+	
+	
+	<select id="selectApplicationAuditingInfoByPage" parameterType="java.util.HashMap" resultMap="applicationInfoResult">
+		SELECT 
+			<include refid="Base_Column_List"/>
+		FROM
+		(
+				SELECT
+			    	rownumber() over() AS RW, t.*
+				FROM
+				    AESB_G_APPLICATION_INFO t
+			where t.AUDIT_STATE != '1' AND t.TYPE IN ('0','1','2','5') AND t.RESERVEDA = #{paramMap.reserveda}
+		) t1
+		where t1.RW between #{ page.begin } and  #{ page.end }
+	</select>
+	
+	
+	
+	<select id="selectApplicationInfoByKeyWord" parameterType="map" resultMap="applicationInfoResult">
+		select 
+			<include refid="Base_Column_List"/>
+		from
+			AESB_G_APPLICATION_INFO 
+		<where>
+			<if test="applicationId != null and applicationId != ''">
+		    	and
+		    		APPLICATION_ID = #{ applicationId }
+		    </if>
+		    <if test="type != null and type != ''">
+		    	and
+		    		TYPE = #{ type }
+		    </if>
+		    <if test="oprType != null and oprType != ''">
+		    	and
+		    		OPR_TYPE = #{ oprType }
+		    </if>
+		    <if test="changeNo != null and changeNo != ''">
+		    	and
+		    		CHANGE_NO = #{ changeNo }
+		    </if>
+		    <if test="entityId != null and entityId != ''">
+		    	and
+		    		ENTITY_ID = #{ entityId }
+		    </if>
+		    <if test="entityVersionId != null and entityVersionId != ''">
+		    	and
+		    		ENTITY_VERSION_ID = #{ entityVersionId }
+		    </if>
+		    <if test="auditState != null and auditState != ''">
+		    	and
+		    		AUDIT_STATE = #{ auditState }
+		    </if>
+		</where>
+	</select>
+	
+	<select id="selectRowsOfCanDeployApplication" resultType="int">
+		SELECT
+		    COUNT(*)
+		FROM
+		    AESB_G_APPLICATION_INFO
+		<where>
+			AUDIT_STATE='1' 
+			AND TYPE IN ('0','1','2','5','6') 
+			AND CHANGE_NO NOT IN 
+			(
+		        SELECT
+                    CHANGE_NO
+                FROM
+                    AESB_G_CHANGE_LIST_INFO
+                WHERE
+                    PRD_FLAG = 'Y'
+            )
+			<if test="keywords != null and keywords.size() > 0">
+			AND (
+				<foreach collection="keywords" item="keyword" separator="or">
+					APPLICATION_DESC LIKE '%${ keyword }%' 
+				</foreach>
+			)
+			</if>
+		</where>
+	</select>
+	
+	<select id="selectCanDeployApplicationByPage" resultMap="applicationInfoResult">
+		select 
+		    <include refid="Base_Column_List"/>
+		from 
+			(
+				select
+					 rownumber() over() AS RW, t1.*
+				from
+				(	
+					select
+				    	*
+					from
+					    AESB_G_APPLICATION_INFO
+					where
+					    AUDIT_STATE='1' 
+					and 
+						type in ('0','1','2','5','6') 
+					and 
+						CHANGE_NO not in 
+						(
+					        select
+			                    CHANGE_NO
+			                from
+			                    AESB_G_CHANGE_LIST_INFO
+			                where
+			                    PRD_FLAG = 'Y'
+			            )
+					<if test="keywords != null and keywords.size() > 0">
+					and 
+						(
+							<foreach collection="keywords" item="keyword" separator="or">
+								APPLICATION_DESC like '%${ keyword }%'
+							</foreach>
+						)
+					</if>
+					order by 
+						CRT_TIME desc
+				) t1
+			) t2
+		where 
+			t2.RW between  #{ page.begin } and  #{ page.end }
+	</select>
+	
+	<select id="selectRowsOfCanDeployApplicationBySystem" resultType="int">
+		SELECT
+		    COUNT(*)
+		FROM
+		    AESB_G_APPLICATION_INFO
+		<where>
+			AUDIT_STATE='1' 
+			AND TYPE IN ('0','1','2','5','6') 
+<!-- 			AND APPLICATION_ID NOT IN -->
+<!-- 		    ( -->
+<!-- 		        SELECT -->
+<!--                     APPLICATION_ID -->
+<!--                 FROM -->
+<!--                     AESB_G_APPLICATION_DEPLOY -->
+<!--                 WHERE -->
+<!--                     STATE='S' -->
+<!--                 GROUP BY -->
+<!--                     APPLICATION_ID  -->
+<!--                 HAVING count(*) <![CDATA[ <= ]]> 3 -->
+<!-- 		    )  -->
+		    AND CHANGE_NO NOT IN 
+			(
+		        SELECT
+                    CHANGE_NO
+                FROM
+                    AESB_G_CHANGE_LIST_INFO
+                WHERE
+                    PRD_FLAG = 'Y'
+            ) 
+			<if test="keywords != null and keywords.size() > 0">
+			AND (
+				<foreach collection="keywords" item="keyword" separator="or">
+					APPLICATION_DESC LIKE '%${ keyword }%' 
+				</foreach>
+			)
+			</if>
+			<if test="sysIds != null and sysIds.size() > 0">
+			AND SYSTEM_ID IN 
+				<foreach collection="sysIds" item="sysId" open="(" close=")" separator=",">
+					#{ sysId }
+				</foreach>
+			</if>
+		</where>
+	</select>
+	
+	<select id="selectCanDeployApplicationByPageAndSystem" resultMap="applicationInfoResult">
+		SELECT 
+		    <include refid="Base_Column_List"/>
+		FROM 
+			(	SELECT
+			    	rownumber() over() AS RW, t1.*
+				FROM 
+				(
+				SELECT * FROM 
+				    AESB_G_APPLICATION_INFO 
+				WHERE
+				    AUDIT_STATE='1' 
+				AND TYPE IN ('0','1','2','5','6') 
+<!-- 				AND APPLICATION_ID NOT IN -->
+<!-- 			    ( -->
+<!-- 			        SELECT -->
+<!-- 	                    APPLICATION_ID -->
+<!-- 	                FROM -->
+<!-- 	                    AESB_G_APPLICATION_DEPLOY -->
+<!-- 	                WHERE -->
+<!-- 	                    STATE='S' -->
+<!-- 	                GROUP BY -->
+<!-- 	                    APPLICATION_ID -->
+<!-- 	                HAVING count(*) <![CDATA[ <= ]]> 3 -->
+<!--                 ) -->
+                AND CHANGE_NO NOT IN 
+				(
+			        SELECT
+	                    CHANGE_NO
+	                FROM
+	                    AESB_G_CHANGE_LIST_INFO
+	                WHERE
+	                    PRD_FLAG = 'Y'
+	            )
+				<if test="keywords != null and keywords.size() > 0">
+				AND (
+					<foreach collection="keywords" item="keyword" separator="or">
+						APPLICATION_DESC LIKE '%${ keyword }%'
+					</foreach>
+				)
+				</if>
+				<if test="sysIds != null and sysIds.size() > 0">
+				AND SYSTEM_ID IN 
+					<foreach collection="sysIds" item="sysId" open="(" close=")" separator=",">
+						#{ sysId }
+					</foreach>
+				</if>
+				ORDER BY CRT_TIME DESC
+				) t1
+			) t2
+		WHERE t2.RW between  #{ page.begin } and  #{ page.end } 
+	</select>
+	
+	<select id="selectMessageGather" resultType="int">
+		select 
+			count(*) 
+		from 
+			AESB_G_APPLICATION_INFO t
+			where AUDIT_STATE = '0' AND TYPE IN ('0','1','2','5')
+
+	</select>
+	
+	<select id="selectAllByChangeNo" resultMap="applicationInfoResult">
+		select
+			<include refid="Base_Column_List"/>
+		from
+			AESB_G_APPLICATION_INFO
+		where
+			CHANGE_NO in
+			<foreach item="changeNo" open="(" close=")" separator="," collection="changeNoList">
+				'${ changeNo }'
+			</foreach>
+		and
+			AUDIT_STATE = '1'
+	</select>
+	
+	<select id="selectFree" resultMap="applicationInfoResult">
+		select
+			<include refid="Base_Column_List"/>
+		from
+			AESB_G_APPLICATION_INFO
+		where
+			AUDIT_STATE = '0'
+		and
+			TYPE in ('0', '1', '2')
+	</select>
+	
+	<update id="updateFree" parameterType="string">
+		update
+			AESB_G_APPLICATION_INFO
+		set
+			AUDIT_STATE = '1'
+		where
+			APPLICATION_ID = #{ applicationInfo }
+	</update>
+	
+	<select id="selectApplicationInfoByChangeNo"   parameterType="string" resultType="int">
+		SELECT 
+			DISTINCT COUNT(A.CHANGE_NO)
+		FROM
+			AESB_G_APPLICATION_INFO  AS A
+		WHERE
+			A.CHANGE_NO = #{changeNo}	
+	</select>
+	
+</mapper>

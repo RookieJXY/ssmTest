@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.jxy.employee.web.dao.user.UserMapper">
+	<resultMap type="java.util.HashMap" id="userBriefResult">
+		<result column="USER_ID" property="userId" />
+		<result column="USER_CODE" property="userCode" />
+		<result column="USER_NAME" property="userName" />
+		<result column="ROLE_NAME" property="roleName" />
+		<result column="DEPARTMENT_NAME" property="departmentName" />
+		<result column="DEPARTMENT_ID" property="departmentId" />
+		<result column="ISMANAGER" property="isManager" />
+	</resultMap>
+	<resultMap type="cn.jxy.employee.web.model.User" id="userResult">
+		<result column="USER_ID" property="userId" />
+		<result column="USER_NAME" property="username" />
+		<result column="USER_PASSWORD" property="password" />
+		<result column="USER_CODE" property="userCode" />
+		<result column="PHONE_NO" property="phoneNo" />
+		<result column="EMAIL" property="email" />
+		<result column="DEPARTMENT_ID" property="departmentId" />
+		<result column="DEPARTMENT_NAME" property="departmentName" />
+		<result column="ISMANAGER" property="isManager" />
+		<result column="ROLE_ID" property="roleId" />
+		<result column="CRT_TIME" property="crtTime" />
+		<result column="AVAIL_STATE" property="availState" />
+		<result column="ROLE_NAME" property="roleName" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		USER_ID,USER_CODE, USER_NAME, USER_PASSWORD, PHONE_NO,
+		EMAIL, DEPARTMENT_ID, ISMANAGER, ROLE_ID, CRT_TIME, AVAIL_STATE
+	</sql>
+
+	<!-- 用户登录验证查询 -->
+	<select id="authentication" resultMap="userResult">
+		select
+		A.USER_ID,
+		A.USER_NAME,
+		A.USER_CODE,
+		A.PHONE_NO,
+		A.EMAIL,
+		A.AVAIL_STATE,
+		A.CRT_TIME,
+		B.DEPARTMENT_ID,
+		B.DEPARTMENT_NAME,
+		C.ROLE_ID,
+		C.ROLE_NAME
+		from
+		AESB_G_USER_INFO A
+		left outer join
+		AESB_G_DEPARTMENT_INFO as B
+		on
+		A.DEPARTMENT_ID = B.DEPARTMENT_ID
+		left outer join
+		AESB_G_ROLE_INFO as C
+		on
+		C.ROLE_ID = A.ROLE_ID
+		where
+		user_name = #{record.username}
+		and
+		user_password = #{record.password}
+	</select>
+
+	<!-- 根据关键字查询用户数 -->
+	<select id="selectRowsByKeywords" resultType="int">
+		select
+		count(*)
+		from
+		AESB_G_USER_INFO
+		<where>
+			<if test="keywords != null and keywords.size() > 0">
+				<foreach collection="keywords" item="keyword" separator="or">
+					USER_CODE like '%${ keyword }%'
+				</foreach>
+				or
+				<foreach collection="keywords" item="keyword" separator="or">
+					USER_NAME like '%${ keyword }%'
+				</foreach>
+			</if>
+		</where>
+	</select>
+
+	<!-- 根据关键字分页查询用户 -->
+	<select id="selectListByKeywords" resultMap="userResult">
+		select
+		A.USER_ID,
+		A.USER_NAME,
+		A.USER_CODE,
+		A.PHONE_NO,
+		A.EMAIL,
+		B.DEPARTMENT_NAME,
+		A.ISMANAGER,
+		A.AVAIL_STATE,
+		C.ROLE_NAME
+		from
+		(
+		select
+		ADI.*
+		from
+		(
+		select * from
+		AESB_G_USER_INFO
+		<where>
+			<if test="keywords != null and keywords.size() > 0">
+				<foreach collection="keywords" item="keyword" separator="or">
+					UPPER(USER_CODE) like UPPER('%${keyword}%')
+				</foreach>
+				or
+				<foreach collection="keywords" item="keyword" separator="or">
+					UPPER(USER_NAME) like UPPER('%${keyword}%')
+				</foreach>
+			</if>
+		</where>
+		) as ADI
+		) AS A
+		left outer join
+		AESB_G_DEPARTMENT_INFO as B
+		on
+		A.DEPARTMENT_ID = B.DEPARTMENT_ID
+		left outer join
+		AESB_G_ROLE_INFO as C
+		on
+		C.ROLE_ID=A.ROLE_ID
+	</select>
+
+	<select id="selectUserListByKeywords" parameterType="map"
+		resultMap="userResult">
+		select
+		A.USER_ID,
+		A.USER_NAME,
+		A.USER_CODE,
+		A.USER_PASSWORD,
+		A.PHONE_NO,
+		A.EMAIL,
+		A.DEPARTMENT_ID,
+		A.ISMANAGER,
+		A.ROLE_ID,
+		A.AVAIL_STATE,
+		A.CRT_TIME,
+		B.DEPARTMENT_NAME,
+		C.ROLE_NAME
+		from
+		(
+		select
+		<include refid="Base_Column_List" />
+		from
+		AESB_G_USER_INFO
+		<where>
+			<if test="userId != null and userId != ''">
+				and
+				USER_ID = #{ userId }
+			</if>
+			<if test="username != null and username != ''">
+				and
+				USER_NAME = #{ username }
+			</if>
+			<if test="userCode != null and userCode != ''">
+				and
+				USER_CODE = #{ userCode }
+			</if>
+			<if test="availState != null and availState != ''">
+				and
+				AVAIL_STATE = #{ availState }
+			</if>
+			<if test="departmentId != null and departmentId != ''">
+				and
+				DEPARTMENT_ID = #{ departmentId }
+			</if>
+			<if test="roleId != null and roleId != ''">
+				and
+				ROLE_ID = #{ roleId }
+			</if>
+
+		</where>
+		)as A
+		left outer join
+		AESB_G_DEPARTMENT_INFO as B
+		on
+		A.DEPARTMENT_ID = B.DEPARTMENT_ID
+		left outer join
+		AESB_G_ROLE_INFO as C
+		on
+		C.ROLE_ID=A.ROLE_ID
+	</select>
+	
+	<select id="selectRowsByManagerId"  parameterType="map" resultType="int">
+		select count(*) from
+		(
+	        select distinct USER_ID from AESB_G_USER_SYSTEM_REL where SYSTEM_ID in
+	        (
+	            select SYSTEM_ID from AESB_G_USER_SYSTEM_REL
+	            <where>
+					<if test="managerId != null and managerId != ''">
+						USER_ID = #{managerId}
+					</if>
+				</where>
+	        )
+	    ) 
+	</select>
+	
+	<select id="selectUsersByManagerId" resultMap="userResult">
+		select
+			A.USER_ID,
+			A.USER_NAME,
+			A.USER_CODE,
+			A.PHONE_NO,
+			A.EMAIL,
+			A.AVAIL_STATE,
+			A.CRT_TIME,
+			B.DEPARTMENT_NAME,
+			A.AVAIL_STATE,
+			C.ROLE_NAME
+		from
+			(
+			    select 
+			    	<include refid="Base_Column_List"/>,
+			    	rownumber() over() as RW 
+			    from AESB_G_USER_INFO
+			    where USER_ID in
+			    (
+			        select distinct USER_ID from AESB_G_USER_SYSTEM_REL where SYSTEM_ID in
+			        (
+			            select SYSTEM_ID from AESB_G_USER_SYSTEM_REL
+			            <where>
+							<if test="param.managerId != null and param.managerId != ''">
+								USER_ID = #{param.managerId}
+							</if>
+						</where>
+			        )
+			    )
+			)as A
+			left outer join
+				AESB_G_DEPARTMENT_INFO as B
+			on
+				A.DEPARTMENT_ID = B.DEPARTMENT_ID
+			left outer join
+				AESB_G_ROLE_INFO as C
+			on
+				C.ROLE_ID=A.ROLE_ID
+			<if test="page != null">
+				<where>
+					RW between #{ page.begin } and #{ page.end }
+				</where>
+			</if>
+	</select>
+	
+	
+</mapper>
